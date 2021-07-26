@@ -1,3 +1,7 @@
+a4/model.bin
+a4/model.bin.optim
+a4/outputs/
+a4/vocab.json
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,jupyternotebooks,visualstudiocode,windows,linux
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,jupyternotebooks,visualstudiocode,windows,linux
