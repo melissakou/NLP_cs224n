@@ -128,7 +128,7 @@ class VocabEntry(object):
         ###     You must prepend each word with the `start_of_word` character and append 
         ###     with the `end_of_word` character. 
 
-
+        return [[[self.start_of_word] + [self.char2id[c] for c in w] + [self.end_of_word] for w in s] for s in sents]
         ### END YOUR CODE
 
     def words2indices(self, sents):
@@ -158,8 +158,12 @@ class VocabEntry(object):
         ### TODO: 
         ###     Connect `words2charindices()` and `pad_sents_char()` which you've defined in 
         ###     previous parts
-        
 
+        char_ids = self.words2charindices(sents)
+        char_ids_padded = pad_sents_char(char_ids, self.char2id['<pad>'])
+        sents_var = torch.tensor(char_ids_padded, dtype=torch.long, device=device).permute([1, 0, 2])
+
+        return sents_var
         ### END YOUR CODE
 
     def to_input_tensor(self, sents: List[List[str]], device: torch.device) -> torch.Tensor:

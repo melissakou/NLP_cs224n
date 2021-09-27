@@ -11,6 +11,9 @@ Michael Hahn <mhahn2@stanford.edu>
 """
 
 import torch.nn as nn
+from torch.nn.functional import dropout
+from cnn import CNN
+from highway import Highway
 
 # Do not change these imports; your module names should be
 #   `CNN` in the file `cnn.py`
@@ -41,7 +44,14 @@ class ModelEmbeddings(nn.Module):
 
         ### YOUR CODE HERE for part 1j
 
+        self.embed_size = embed_size
+        char_embed_size = 50
+        dropout_rate = 0.3
 
+        self.char_embedding = nn.Embedding(num_embeddings=len(vocab.char2id), embedding_dim=char_embed_size, padding_idx=vocab.char2id["<pad>"])
+        self.cnn = CNN(in_channels=char_embed_size, out_channels=embed_size)
+        self.highway = Highway(input_size=embed_size)
+        self.dropout = nn.Dropout(p=dropout_rate)
         ### END YOUR CODE
 
     def forward(self, input):
@@ -60,6 +70,14 @@ class ModelEmbeddings(nn.Module):
 
         ### YOUR CODE HERE for part 1j
 
+        sentence_length, batch_size, _ = input.shape
+        
+        x_emb = self.char_embedding(input)
+        x_reshape = x_emb.reshape(x_emb.shape[0] * x_emb.shape[1], x_emb.shape[2], x_emb.shape[3]).permute([0, 2, 1])
+        x_conv_out = self.cnn(x_reshape)
+        x_highway = self.highway(x_conv_out)
+        x_word_emb = self.dropout(x_highway)
 
+        return x_word_emb.reshape(sentence_length, batch_size, x_word_emb.shape[-1])
         ### END YOUR CODE
 

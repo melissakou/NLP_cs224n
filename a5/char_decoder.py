@@ -5,8 +5,10 @@
 CS224N 2018-19: Homework 5
 """
 
+import re
 import torch
 import torch.nn as nn
+import numpy as np
 
 class CharDecoder(nn.Module):
     def __init__(self, hidden_size, char_embedding_size=50, target_vocab=None):
@@ -27,8 +29,12 @@ class CharDecoder(nn.Module):
         ### Hint: - Use target_vocab.char2id to access the character vocabulary for the target language.
         ###       - Set the padding_idx argument of the embedding matrix.
         ###       - Create a new Embedding layer. Do not reuse embeddings created in Part 1 of this assignment.
-        
 
+        super(CharDecoder, self).__init__()
+        self.charDecoder = nn.LSTM(input_size=char_embedding_size, hidden_size=hidden_size)
+        self.char_output_projection = nn.Linear(in_features=hidden_size, out_features=len(target_vocab.char2id))
+        self.decoderCharEmb = nn.Embedding(num_embeddings=len(target_vocab.char2id), embedding_dim=char_embedding_size, padding_idx=target_vocab.char2id["<pad>"])
+        self.target_vocab = target_vocab
         ### END YOUR CODE
 
 
@@ -44,8 +50,12 @@ class CharDecoder(nn.Module):
         """
         ### YOUR CODE HERE for part 2b
         ### TODO - Implement the forward pass of the character decoder.
-        
-        
+
+        char_emb = self.decoderCharEmb(input) # (length, batch, char_embedding_size)
+        h_t, dec_hidden = self.charDecoder(char_emb, dec_hidden) # (length, batch, hidden_size)
+        s_t = self.char_output_projection(h_t) # (length, batch, self.vocab_size)
+
+        return s_t, dec_hidden
         ### END YOUR CODE 
 
 
@@ -62,8 +72,12 @@ class CharDecoder(nn.Module):
         ###
         ### Hint: - Make sure padding characters do not contribute to the cross-entropy loss.
         ###       - char_sequence corresponds to the sequence x_1 ... x_{n+1} from the handout (e.g., <START>,m,u,s,i,c,<END>).
+        s_t, _ = self.forward(char_sequence[:-1], dec_hidden) # (length, batch, self.vocab_size)
+        s_t = s_t.permute([1, 2, 0])
+        target = char_sequence[1:].permute([1, 0]) # (length, batch)
+        loss_char = nn.CrossEntropyLoss(reduction="sum")(s_t, target)
 
-
+        return loss_char
         ### END YOUR CODE
 
     def decode_greedy(self, initialStates, device, max_length=21):
@@ -84,6 +98,18 @@ class CharDecoder(nn.Module):
         ###      - We use curly brackets as start-of-word and end-of-word characters. That is, use the character '{' for <START> and '}' for <END>.
         ###        Their indices are self.target_vocab.start_of_word and self.target_vocab.end_of_word, respectively.
         
-        
+        batch_size = initialStates[0].shape[1]
+        output_word = [["{"] * batch_size]
+        current_char = torch.tensor([[self.target_vocab.start_of_word] * batch_size], device=device) # (length=1, batch_size)
+        current_state = initialStates # 2 * (length=1, batch_size, hidden_size)
+        for _ in range(max_length):
+            s_t, current_state = self.forward(input=current_char, dec_hidden=current_state) # (length=1, batch_size, self.vocab_size)
+            p_t = torch.softmax(s_t.squeeze(0), dim=-1) # (batch_size, self.vocab_size)
+            current_char = torch.argmax(p_t, dim=-1).unsqueeze(0) # (length=1, batch_size)
+            output_word += [[self.target_vocab.id2char[c] for c in current_char.squeeze(0).tolist()]]
+        output_word = output_word[1:]
+        output_word = [re.sub("\}.*", "", "".join(w)) for w in np.array(output_word).T.tolist()]
+
+        return output_word
         ### END YOUR CODE
 

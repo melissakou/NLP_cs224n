@@ -322,9 +322,17 @@ def main():
     """ Main func.
     """
     args = docopt(__doc__)
+    # args = {
+    #     "--train-src": "./en_es_data/train_tiny.es", "--train-tgt": "./en_es_data/train_tiny.en",
+    #     "--dev-src": "./en_es_data/dev_tiny.es", "--dev-tgt": "./en_es_data/dev_tiny.en", "--vocab": "vocab_tiny_q1.json", "--batch-size": 2,
+    #     "--valid-niter": 100, "--max-epoch": 101, "--clip-grad": 5.0, "--log-every": 10, "--save-to": "model.bin", "--embed-size": 256, "--hidden-size": 256,
+    #     "--dropout": 0.3, "--no-char-decoder": True, "--uniform-init": 0.1, "--cuda": False, "--lr": 0.001, "--patience": 5, "--max-num-trial": 5, "--lr-decay": 0.5
+    # }
+
+    # train(args)
 
     # Check pytorch version
-    assert(torch.__version__ == "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
+    # assert(torch.__version__ == "1.0.0"), "Please update your installation of PyTorch. You have {} and you should have version 1.0.0".format(torch.__version__)
 
     # seed the random number generators
     seed = int(args['--seed'])
